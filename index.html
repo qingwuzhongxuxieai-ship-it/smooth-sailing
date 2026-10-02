@@ -62,18 +62,21 @@
     <!-- ============ 故事 ============ -->
     <div id="stories"></div>
 
-    <!-- ============ 照片 ============ -->
+    <!-- ============ 照片与影像 ============ -->
     <section class="sec" id="photos" hidden>
-      <p class="eyebrow">照片</p>
-      <h2 class="sec-title" id="photosTitle"></h2>
-      <p class="sec-note" id="photosNote"></p>
-      <div class="photo-flow" id="photoFlow"></div>
+      <p class="eyebrow">影集</p>
+      <h2 class="sec-title" id="mediaTitle"></h2>
+      <p class="sec-note" id="mediaNote"></p>
 
-      <div class="media-block" id="videoBlock" hidden>
-        <h3 class="sub-title" id="videosTitle"></h3>
-        <p class="sec-note" id="videosNote"></p>
-        <div class="video-grid" id="videoGrid"></div>
+      <div class="vlog" id="vlogBlock" hidden>
+        <div class="vlog-head">
+          <h3 class="sub-title" id="vlogTitle"></h3>
+          <span class="vlog-note" id="vlogNote"></span>
+        </div>
+        <video id="vlogEl" controls playsinline preload="metadata"></video>
       </div>
+
+      <div class="albums" id="albums"></div>
     </section>
 
     <!-- ============ 还没发生的故事 ============ -->

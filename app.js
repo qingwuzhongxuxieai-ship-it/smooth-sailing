@@ -146,36 +146,70 @@
   var photoList = [];
   var photoIndex = 0;
 
-  function buildPhotos() {
-    var photos = CFG.photos || [];
-    var videos = CFG.videos || [];
+  function buildMedia() {
     var sec = $('photos');
-    var flow = $('photoFlow');
-    if (!sec || !flow) return;
+    var box = $('albums');
+    if (!sec || !box) return;
 
-    if (!photos.length && !videos.length) { sec.hidden = true; return; }
+    var albums = (CFG.albums || []).filter(function (a) {
+      return (a.photos && a.photos.length) || (a.videos && a.videos.length);
+    });
+    var hasVlog = !!(CFG.vlog && CFG.vlog.src);
 
+    if (!albums.length && !hasVlog) { sec.hidden = true; return; }
     sec.hidden = false;
-    var t = $('photosTitle');
-    if (t) t.textContent = photos.length ? (CFG.photosTitle || '照片') : (CFG.videosTitle || '影像');
-    var nt = $('photosNote');
-    if (nt) nt.textContent = photos.length ? (CFG.photosNote || '') : '';
 
-    // 占用目录/侧栏的一个位置
-    CHAPTERS.push({ id: 'photos', label: '照片', title: CFG.photosTitle || '照片' });
+    var mt = $('mediaTitle'); if (mt) mt.textContent = CFG.mediaTitle || '照片与影像';
+    var mn = $('mediaNote'); if (mn) mn.textContent = CFG.mediaNote || '';
+    CHAPTERS.push({ id: 'photos', label: '影集', title: CFG.mediaTitle || '照片与影像' });
 
-    photoList = photos.slice();
-
-    if (!photos.length) {
-      flow.innerHTML = '';
-      flow.style.display = 'none';
-    } else {
-      flow.style.display = '';
-      buildPhotoColumns(photos);
-      setupPhotoResize();
+    // ---- 影片 ----
+    var vb = $('vlogBlock');
+    if (hasVlog && vb) {
+      vb.hidden = false;
+      var vt = $('vlogTitle'); if (vt) vt.textContent = CFG.vlogTitle || '影像集';
+      var vn = $('vlogNote'); if (vn) vn.textContent = CFG.vlogNote || '';
+      var ve = $('vlogEl');
+      if (ve) {
+        ve.src = CFG.vlog.src;
+        if (CFG.vlog.poster) ve.poster = CFG.vlog.poster;
+        ve.setAttribute('aria-label', CFG.vlogTitle || '影像集');
+      }
+    } else if (vb) {
+      vb.hidden = true;
     }
 
-    buildVideos(videos);
+    // ---- 专辑 ----
+    box.innerHTML = '';
+    photoList = [];
+
+    albums.forEach(function (a, ai) {
+      var art = el('article', 'album');
+      art.id = 'album-' + (ai + 1);
+
+      var head = el('header', 'album-head');
+      head.appendChild(el('span', 'album-num', pad2(ai + 1)));
+      head.appendChild(el('h3', 'album-title', a.title || ''));
+      art.appendChild(head);
+      if (a.note) art.appendChild(el('p', 'album-note', a.note));
+
+      if (a.photos && a.photos.length) {
+        var flow = el('div', 'photo-flow');
+        art.appendChild(flow);
+        appendPhotoColumns(flow, a.photos);
+      }
+
+      if (a.videos && a.videos.length) {
+        var grid = el('div', 'video-grid');
+        art.appendChild(grid);
+        a.videos.forEach(function (v, i) { grid.appendChild(makeVideoCard(v, i)); });
+      }
+
+      box.appendChild(art);
+    });
+
+    photoCols = photoColCount();
+    setupPhotoResize();
   }
 
   /* 左右交替填两列：这样往下看是「从左到右、从上到下」的先后顺序，
@@ -186,43 +220,40 @@
     return window.innerWidth < 620 ? 1 : 2;
   }
 
-  function buildPhotoColumns(photos) {
-    var flow = $('photoFlow');
-    if (!flow) return;
-    var cols = photoColCount();
-    photoCols = cols;
+  function makePhotoFigure(p, idx) {
+    var fig = el('figure', 'photo');
+    fig.setAttribute('role', 'button');
+    fig.setAttribute('tabindex', '0');
+    fig.setAttribute('aria-label', '看大图：' + (p.caption || '照片 ' + (idx + 1)));
 
-    flow.innerHTML = '';
+    var img = document.createElement('img');
+    img.src = p.src;
+    img.alt = p.alt || p.caption || ('照片 ' + (idx + 1));
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    fig.appendChild(img);
+
+    if (p.caption) fig.appendChild(el('figcaption', null, p.caption));
+
+    fig.addEventListener('click', function () { openLightbox(idx); });
+    fig.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); }
+    });
+    return fig;
+  }
+
+  function appendPhotoColumns(flow, photos) {
+    var cols = photoColCount();
     var buckets = [];
     for (var c = 0; c < cols; c++) {
       var col = el('div', 'photo-col');
       flow.appendChild(col);
       buckets.push(col);
     }
-
     photos.forEach(function (p, i) {
-      var fig = el('figure', 'photo');
-      fig.setAttribute('role', 'button');
-      fig.setAttribute('tabindex', '0');
-      fig.setAttribute('aria-label', '看大图：' + (p.caption || '照片 ' + (i + 1)));
-
-      var img = document.createElement('img');
-      img.src = p.src;
-      img.alt = p.alt || p.caption || ('照片 ' + (i + 1));
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      fig.appendChild(img);
-
-      if (p.caption) fig.appendChild(el('figcaption', null, p.caption));
-
-      (function (idx) {
-        fig.addEventListener('click', function () { openLightbox(idx); });
-        fig.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); }
-        });
-      })(i);
-
-      buckets[i % cols].appendChild(fig);
+      var idx = photoList.length;
+      photoList.push(p);
+      buckets[i % cols].appendChild(makePhotoFigure(p, idx));
     });
   }
 
@@ -233,39 +264,24 @@
     window.addEventListener('resize', function () {
       clearTimeout(photoResizeTimer);
       photoResizeTimer = setTimeout(function () {
-        if (photoColCount() !== photoCols) buildPhotoColumns(photoList);
+        if (photoColCount() !== photoCols) buildMedia();
       }, 220);
     });
   }
 
-  function buildVideos(videos) {
-    var block = $('videoBlock');
-    var grid = $('videoGrid');
-    if (!block || !grid) return;
-
-    if (!videos.length) { block.hidden = true; return; }
-    block.hidden = false;
-
-    var vt = $('videosTitle'); if (vt) vt.textContent = CFG.videosTitle || '影像';
-    var vn = $('videosNote'); if (vn) vn.textContent = CFG.videosNote || '';
-
-    grid.innerHTML = '';
-    videos.forEach(function (v, i) {
-      var fig = el('figure', 'vcard');
-
-      var vid = document.createElement('video');
-      vid.controls = true;
-      vid.playsInline = true;
-      vid.preload = 'none';              // 点开才加载，省流量
-      vid.setAttribute('controlsList', 'nodownload');
-      if (v.poster) vid.poster = v.poster;
-      vid.src = v.src;
-      vid.setAttribute('aria-label', v.caption || ('视频 ' + (i + 1)));
-      fig.appendChild(vid);
-
-      if (v.caption) fig.appendChild(el('figcaption', null, v.caption));
-      grid.appendChild(fig);
-    });
+  function makeVideoCard(v, i) {
+    var fig = el('figure', 'vcard');
+    var vid = document.createElement('video');
+    vid.controls = true;
+    vid.playsInline = true;
+    vid.preload = 'none';              // 点开才加载，省流量
+    vid.setAttribute('controlsList', 'nodownload');
+    if (v.poster) vid.poster = v.poster;
+    vid.src = v.src;
+    vid.setAttribute('aria-label', v.caption || ('视频 ' + (i + 1)));
+    fig.appendChild(vid);
+    if (v.caption) fig.appendChild(el('figcaption', null, v.caption));
+    return fig;
   }
 
   function openLightbox(i) {
@@ -1108,7 +1124,7 @@
   function init() {
     fillCoverAndForeword();
     buildStories();
-    buildPhotos();
+    buildMedia();
     buildTOC();
     buildRail();
     buildList();
