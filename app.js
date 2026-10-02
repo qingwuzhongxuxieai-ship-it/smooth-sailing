@@ -678,7 +678,7 @@
       // 窄屏上把船压到更前面一排浪，免得挡住封面题记
       var layer = W < 760 ? LAYERS[2] : LAYERS[1];
       var bx = W * 0.235 + Math.sin(t * 0.055) * W * 0.028;
-      var by = waveY(bx, layer, t) + Math.sin(t * 1.25) * 1.6;
+      var by = waveY(bx, layer, t) + (W < 760 ? 58 : 0) + Math.sin(t * 1.25) * 1.6;
       var S = scale;
 
       ctx.save();
