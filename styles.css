@@ -39,12 +39,12 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
-body.reading #sea{opacity:.085 !important}
+body.reading #sea{opacity:.06 !important}
 
 /* 阅读时把背景压暗，正文才不被打扰 */
 body.reading .vignette{
   background:
-    linear-gradient(rgba(4,7,14,.34), rgba(4,7,14,.34)),
+    linear-gradient(rgba(4,7,14,.42), rgba(4,7,14,.42)),
     radial-gradient(122% 80% at 50% 34%, rgba(0,0,0,0) 38%, rgba(0,0,0,.58) 100%);
 }
 
