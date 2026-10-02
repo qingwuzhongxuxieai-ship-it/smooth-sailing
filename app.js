@@ -174,6 +174,16 @@
         ve.src = CFG.vlog.src;
         if (CFG.vlog.poster) ve.poster = CFG.vlog.poster;
         ve.setAttribute('aria-label', CFG.vlogTitle || '影像集');
+        // Chrome 会推迟加载离屏的 video，这里主动催一下，保证滚到时不会白屏
+        if ('IntersectionObserver' in window) {
+          var vio = new IntersectionObserver(function (ens) {
+            if (ens[0].isIntersecting) {
+              try { ve.load(); } catch (e) {}
+              vio.disconnect();
+            }
+          }, { rootMargin: '500px' });
+          vio.observe(ve);
+        }
       }
     } else if (vb) {
       vb.hidden = true;
