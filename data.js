@@ -158,7 +158,7 @@ window.YIFAN = {
 
   vlogTitle: '影像集',
 
-  vlogNote: '两分二十五秒 · 剪自 25 张照片和 19 段视频',
+  vlogNote: '两分四十一秒 · 剪自 25 张照片和 25 段视频 · 上下两版配乐',
 
   /* ------------------------------------------------------------------
      5. 专辑
@@ -197,7 +197,7 @@ window.YIFAN = {
         { src: 'videos/v20.mp4', poster: 'videos/t20.jpg', caption: '镜子一开，变成一整排' },
         { src: 'videos/v02.mp4', poster: 'videos/t02.jpg', caption: '像素墨镜和大金链' },
         { src: 'videos/v03.mp4', poster: 'videos/t03.jpg', caption: '小红帽和胡子' },
-        { src: 'videos/v21.mp4', poster: 'videos/t21.jpg', caption: '小熊鼻子' },
+        { src: 'videos/v21.mp4', poster: 'videos/t21.jpg', caption: '又是小熊鼻子' },
         { src: 'videos/v04.mp4', poster: 'videos/t04.jpg', caption: '戴着帽子说 ok' },
         { src: 'videos/v05.mp4', poster: 'videos/t05.jpg', caption: '连帽衫' },
         { src: 'videos/v06.mp4', poster: 'videos/t06.jpg', caption: '小熊鼻子' },
