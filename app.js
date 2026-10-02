@@ -148,21 +148,25 @@
 
   function buildPhotos() {
     var photos = CFG.photos || [];
+    var videos = CFG.videos || [];
     var sec = $('photos');
     var flow = $('photoFlow');
     if (!sec || !flow) return;
 
-    if (!photos.length) { sec.hidden = true; return; }
+    if (!photos.length && !videos.length) { sec.hidden = true; return; }
 
     sec.hidden = false;
-    var t = $('photosTitle'); if (t) t.textContent = CFG.photosTitle || '照片';
-    var nt = $('photosNote'); if (nt) nt.textContent = CFG.photosNote || '';
+    var t = $('photosTitle');
+    if (t) t.textContent = photos.length ? (CFG.photosTitle || '照片') : (CFG.videosTitle || '影像');
+    var nt = $('photosNote');
+    if (nt) nt.textContent = photos.length ? (CFG.photosNote || '') : '';
 
     // 占用目录/侧栏的一个位置
     CHAPTERS.push({ id: 'photos', label: '照片', title: CFG.photosTitle || '照片' });
 
     flow.innerHTML = '';
     photoList = [];
+    if (!photos.length) flow.style.display = 'none';
 
     photos.forEach(function (p, i) {
       var fig = el('figure', 'photo');
@@ -188,6 +192,38 @@
 
       photoList.push(p);
       flow.appendChild(fig);
+    });
+
+    buildVideos(videos);
+  }
+
+  function buildVideos(videos) {
+    var block = $('videoBlock');
+    var grid = $('videoGrid');
+    if (!block || !grid) return;
+
+    if (!videos.length) { block.hidden = true; return; }
+    block.hidden = false;
+
+    var vt = $('videosTitle'); if (vt) vt.textContent = CFG.videosTitle || '影像';
+    var vn = $('videosNote'); if (vn) vn.textContent = CFG.videosNote || '';
+
+    grid.innerHTML = '';
+    videos.forEach(function (v, i) {
+      var fig = el('figure', 'vcard');
+
+      var vid = document.createElement('video');
+      vid.controls = true;
+      vid.playsInline = true;
+      vid.preload = 'none';              // 点开才加载，省流量
+      vid.setAttribute('controlsList', 'nodownload');
+      if (v.poster) vid.poster = v.poster;
+      vid.src = v.src;
+      vid.setAttribute('aria-label', v.caption || ('视频 ' + (i + 1)));
+      fig.appendChild(vid);
+
+      if (v.caption) fig.appendChild(el('figcaption', null, v.caption));
+      grid.appendChild(fig);
     });
   }
 

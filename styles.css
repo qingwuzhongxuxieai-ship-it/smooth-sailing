@@ -511,6 +511,56 @@ body.reading .vignette{
 
 /* ---------- 灯箱 ---------- */
 
+.media-block{margin-top:64px}
+
+.sub-title{
+  margin:0 0 10px;
+  font-family:var(--serif);
+  font-size:clamp(19px,2.5vw,25px);
+  font-weight:500;
+  letter-spacing:.06em;
+  color:var(--ink);
+}
+
+.video-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+  margin-top:18px;
+}
+
+.vcard{
+  margin:0;
+  border-radius:14px;
+  overflow:hidden;
+  background:#080f1a;
+  border:1px solid var(--line-soft);
+  transition:border-color .25s ease;
+}
+.vcard:hover{border-color:rgba(var(--gold-rgb),.30)}
+.vcard video{
+  display:block;
+  width:100%;
+  aspect-ratio:9 / 16;
+  object-fit:contain;
+  background:#000;
+}
+.vcard figcaption{
+  padding:9px 12px 11px;
+  font-family:var(--serif);
+  font-size:12px;
+  line-height:1.7;
+  letter-spacing:.03em;
+  color:var(--ink-2);
+}
+
+@media (max-width:760px){
+  .video-grid{grid-template-columns:repeat(2, 1fr);gap:10px}
+  .media-block{margin-top:48px}
+}
+
+/* ---------- 灯箱 ---------- */
+
 .lightbox{
   position:fixed;
   inset:0;

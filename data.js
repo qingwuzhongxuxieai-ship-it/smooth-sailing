@@ -138,15 +138,68 @@ window.YIFAN = {
      ------------------------------------------------------------------ */
   photosTitle: '照片',
 
-  photosNote: '',
+  photosNote: '照片按时间顺序放着。下面的说明是我照着画面写的，你可以换成自己的记忆。',
 
   photos: [
-    // { src: 'photos/01.jpg', caption: '这一天的风很大', alt: '海边' },
-    // { src: 'photos/02.jpg', caption: '' }
+    { src: 'photos/p01.jpg', caption: '把辫子举起来，脸上贴了只小猪' },
+    { src: 'photos/p02.jpg', caption: '电梯镜子里的自拍' },
+    { src: 'photos/p03.jpg', caption: '夜里的街口，远处有人在放烟花' },
+    { src: 'photos/p04.jpg', caption: '两个人挤进同一个镜头' },
+    { src: 'photos/p05.jpg', caption: '站在台阶上' },
+    { src: 'photos/p06.jpg', caption: '傍晚的操场，云是橘色的' },
+    { src: 'photos/p07.jpg', caption: '同一天的晚霞，你又拍了一张' },
+    { src: 'photos/p08.jpg', caption: '店里，等锅开' },
+    { src: 'photos/p09.jpg', caption: '同一张桌子' },
+    { src: 'photos/p10.jpg', caption: '花开的时候' },
+    { src: 'photos/p11.jpg', caption: '走在我前面的样子' },
+    { src: 'photos/p12.jpg', caption: '太阳落到树后面' },
+    { src: 'photos/p13.jpg', caption: '伸手去够一片云' },
+    { src: 'photos/p14.jpg', caption: '低头的时候' },
+    { src: 'photos/p15.jpg', caption: '这个滤镜大概是最丑的一个' },
+    { src: 'photos/p16.jpg', caption: '还是那家店' },
+    { src: 'photos/p17.jpg', caption: '被同学拉进了镜头' },
+    { src: 'photos/p18.jpg', caption: '猫耳朵' },
+    { src: 'photos/p19.jpg', caption: '校门口，太阳有点晃眼' },
+    { src: 'photos/p20.jpg', caption: '很普通的一天' },
+    { src: 'photos/p21.jpg', caption: '又一个滤镜' },
+    { src: 'photos/p22.jpg', caption: '从栏杆的缝里拍的' },
+    { src: 'photos/p23.jpg', caption: '不肯让拍的时候' },
+    { src: 'photos/p24.jpg', caption: '手' },
+    { src: 'photos/p25.jpg', caption: '一边吃冰淇淋一边看手机' }
   ],
 
   /* ------------------------------------------------------------------
-     5. 还没发生的故事（就是那份清单）
+     5. 影像（短视频）
+     放在 videos 文件夹。poster 是封面图，点开才会加载视频本身。
+     ------------------------------------------------------------------ */
+  videosTitle: '影像',
+
+  videosNote: '点一下就能播放，声音记得开。',
+
+  videos: [
+    { src: 'videos/v01.mp4', poster: 'videos/t01.jpg', caption: '猫耳，托腮' },
+    { src: 'videos/v02.mp4', poster: 'videos/t02.jpg', caption: '像素墨镜和大金链' },
+    { src: 'videos/v03.mp4', poster: 'videos/t03.jpg', caption: '小红帽和胡子' },
+    { src: 'videos/v04.mp4', poster: 'videos/t04.jpg', caption: '戴着帽子说 ok' },
+    { src: 'videos/v05.mp4', poster: 'videos/t05.jpg', caption: '连帽衫' },
+    { src: 'videos/v06.mp4', poster: 'videos/t06.jpg', caption: '小熊鼻子' },
+    { src: 'videos/v07.mp4', poster: 'videos/t07.jpg', caption: '公园里，猫耳和雨伞' },
+    { src: 'videos/v08.mp4', poster: 'videos/t08.jpg', caption: '操场边，双手托腮' },
+    { src: 'videos/v09.mp4', poster: 'videos/t09.jpg', caption: '白衬衫' },
+    { src: 'videos/v10.mp4', poster: 'videos/t10.jpg', caption: '放学路上' },
+    { src: 'videos/v11.mp4', poster: 'videos/t11.jpg', caption: '在家，胡子滤镜' },
+    { src: 'videos/v12.mp4', poster: 'videos/t12.jpg', caption: '街上的黄衬衫' },
+    { src: 'videos/v13.mp4', poster: 'videos/t13.jpg', caption: '镜头拉近' },
+    { src: 'videos/v14.mp4', poster: 'videos/t14.jpg', caption: '低头' },
+    { src: 'videos/v15.mp4', poster: 'videos/t15.jpg', caption: '夜里，一边走一边吃冰淇淋' },
+    { src: 'videos/v16.mp4', poster: 'videos/t16.jpg', caption: '戴眼镜' },
+    { src: 'videos/v17.mp4', poster: 'videos/t17.jpg', caption: '红帽子' },
+    { src: 'videos/v18.mp4', poster: 'videos/t18.jpg', caption: '风把头发吹乱了' },
+    { src: 'videos/v19.mp4', poster: 'videos/t19.jpg', caption: '人多的地方' }
+  ],
+
+  /* ------------------------------------------------------------------
+     6. 还没发生的故事（就是那份清单）
      ------------------------------------------------------------------ */
   listTitle: '想一起做的事',
 
@@ -178,7 +231,7 @@ window.YIFAN = {
   ],
 
   /* ------------------------------------------------------------------
-     6. 星愿（点一下夜空就能放一颗星）
+     7. 星愿（点一下夜空就能放一颗星）
      ------------------------------------------------------------------ */
   wishesTitle: '留一颗星',
 
@@ -193,7 +246,7 @@ window.YIFAN = {
   wishHint: '在夜空里点一下，就是一颗星',
 
   /* ------------------------------------------------------------------
-     7. 后记：信
+     8. 后记：信
      ------------------------------------------------------------------ */
   letterTitle: '后记：写给你的信',
 
@@ -207,7 +260,7 @@ window.YIFAN = {
   letterSign: '—— 一直在这里的人',
 
   /* ------------------------------------------------------------------
-     8. 版权页（计时器）
+     9. 版权页（计时器）
 
      填上你们的那一天，这里就会变成「和你在一起 X 天 X 小时」。
      格式：'2020-05-20T20:20:00'
@@ -218,7 +271,7 @@ window.YIFAN = {
   beginLabel: '和你在一起',
 
   /* ------------------------------------------------------------------
-     9. 页脚
+     10. 页脚
      ------------------------------------------------------------------ */
   footerLeft: '做给 刘一帆',
   footerRight: '一帆风顺 · 2026'
