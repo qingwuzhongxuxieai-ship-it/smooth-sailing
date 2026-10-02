@@ -194,12 +194,15 @@ window.YIFAN = {
       ],
       videos: [
         { src: 'videos/v01.mp4', poster: 'videos/t01.jpg', caption: '猫耳，托腮' },
+        { src: 'videos/v20.mp4', poster: 'videos/t20.jpg', caption: '镜子一开，变成一整排' },
         { src: 'videos/v02.mp4', poster: 'videos/t02.jpg', caption: '像素墨镜和大金链' },
         { src: 'videos/v03.mp4', poster: 'videos/t03.jpg', caption: '小红帽和胡子' },
+        { src: 'videos/v21.mp4', poster: 'videos/t21.jpg', caption: '小熊鼻子' },
         { src: 'videos/v04.mp4', poster: 'videos/t04.jpg', caption: '戴着帽子说 ok' },
         { src: 'videos/v05.mp4', poster: 'videos/t05.jpg', caption: '连帽衫' },
         { src: 'videos/v06.mp4', poster: 'videos/t06.jpg', caption: '小熊鼻子' },
         { src: 'videos/v11.mp4', poster: 'videos/t11.jpg', caption: '在家，胡子滤镜' },
+        { src: 'videos/v22.mp4', poster: 'videos/t22.jpg', caption: '不想上学（写在两个人头上）' },
         { src: 'videos/v16.mp4', poster: 'videos/t16.jpg', caption: '戴眼镜' },
         { src: 'videos/v17.mp4', poster: 'videos/t17.jpg', caption: '红帽子' }
       ]
@@ -249,7 +252,10 @@ window.YIFAN = {
       ],
       videos: [
         { src: 'videos/v13.mp4', poster: 'videos/t13.jpg', caption: '镜头拉近' },
-        { src: 'videos/v14.mp4', poster: 'videos/t14.jpg', caption: '低头' }
+        { src: 'videos/v14.mp4', poster: 'videos/t14.jpg', caption: '低头' },
+        { src: 'videos/v23.mp4', poster: 'videos/t23.jpg', caption: '白外套，看着镜头' },
+        { src: 'videos/v24.mp4', poster: 'videos/t24.jpg', caption: '手里是那张拍立得' },
+        { src: 'videos/v25.mp4', poster: 'videos/t25.jpg', caption: '夜里，站在车边' }
       ]
     }
   ],
