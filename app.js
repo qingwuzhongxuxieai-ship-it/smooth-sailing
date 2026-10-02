@@ -206,16 +206,7 @@
           }
         }
 
-        // Chrome 会推迟加载离屏的 video，这里主动催一下，保证滚到时不会白屏
-        if ('IntersectionObserver' in window) {
-          var vio = new IntersectionObserver(function (ens) {
-            if (ens[0].isIntersecting) {
-              try { ve.load(); } catch (e) {}
-              vio.disconnect();
-            }
-          }, { rootMargin: '500px' });
-          vio.observe(ve);
-        }
+        // preload="none"：不点播放就一个字节都不下载，只显示封面图
       }
     } else if (vb) {
       vb.hidden = true;
@@ -270,6 +261,26 @@
     try { video.load(); } catch (e) {}
   }
 
+  /* photos/p01.jpg -> photos/thumb/p01.jpg */
+  function thumbOf(src) {
+    var i = src.lastIndexOf('/');
+    if (i < 0) return src;
+    return src.slice(0, i) + '/thumb' + src.slice(i);
+  }
+
+  /* 视频封面图也懒加载：滚到附近才请求，避免一开页就发 25 个图片请求 */
+  var posterObserver = ('IntersectionObserver' in window)
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          var vid = en.target;
+          var poster = vid.getAttribute('data-poster');
+          if (poster) vid.poster = poster;
+          posterObserver.unobserve(vid);
+        });
+      }, { rootMargin: '700px' })
+    : null;
+
   function makePhotoFigure(p, idx) {
     var fig = el('figure', 'photo');
     fig.setAttribute('role', 'button');
@@ -277,7 +288,8 @@
     fig.setAttribute('aria-label', '看大图：' + (p.caption || '照片 ' + (idx + 1)));
 
     var img = document.createElement('img');
-    img.src = p.src;
+    // 网格里只用 720px 缩略图，点开看大图时才加载原图
+    img.src = thumbOf(p.src);
     img.alt = p.alt || p.caption || ('照片 ' + (idx + 1));
     img.loading = 'lazy';
     img.decoding = 'async';
@@ -326,9 +338,13 @@
     vid.playsInline = true;
     vid.preload = 'none';              // 点开才加载，省流量
     vid.setAttribute('controlsList', 'nodownload');
-    if (v.poster) vid.poster = v.poster;
     vid.src = v.src;
     vid.setAttribute('aria-label', v.caption || ('视频 ' + (i + 1)));
+    if (v.poster) {
+      vid.setAttribute('data-poster', v.poster);
+      if (posterObserver) posterObserver.observe(vid);
+      else vid.poster = v.poster;
+    }
     fig.appendChild(vid);
     if (v.caption) fig.appendChild(el('figcaption', null, v.caption));
     return fig;
