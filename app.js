@@ -164,9 +164,41 @@
     // 占用目录/侧栏的一个位置
     CHAPTERS.push({ id: 'photos', label: '照片', title: CFG.photosTitle || '照片' });
 
+    photoList = photos.slice();
+
+    if (!photos.length) {
+      flow.innerHTML = '';
+      flow.style.display = 'none';
+    } else {
+      flow.style.display = '';
+      buildPhotoColumns(photos);
+      setupPhotoResize();
+    }
+
+    buildVideos(videos);
+  }
+
+  /* 左右交替填两列：这样往下看是「从左到右、从上到下」的先后顺序，
+     而不是 CSS 多列那种「先排满左列再排右列」。 */
+  var photoCols = 0;
+
+  function photoColCount() {
+    return window.innerWidth < 620 ? 1 : 2;
+  }
+
+  function buildPhotoColumns(photos) {
+    var flow = $('photoFlow');
+    if (!flow) return;
+    var cols = photoColCount();
+    photoCols = cols;
+
     flow.innerHTML = '';
-    photoList = [];
-    if (!photos.length) flow.style.display = 'none';
+    var buckets = [];
+    for (var c = 0; c < cols; c++) {
+      var col = el('div', 'photo-col');
+      flow.appendChild(col);
+      buckets.push(col);
+    }
 
     photos.forEach(function (p, i) {
       var fig = el('figure', 'photo');
@@ -188,13 +220,22 @@
         fig.addEventListener('keydown', function (e) {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); }
         });
-      })(photoList.length);
+      })(i);
 
-      photoList.push(p);
-      flow.appendChild(fig);
+      buckets[i % cols].appendChild(fig);
     });
+  }
 
-    buildVideos(videos);
+  var photoResizeTimer = null;
+  function setupPhotoResize() {
+    if (setupPhotoResize.done) return;
+    setupPhotoResize.done = true;
+    window.addEventListener('resize', function () {
+      clearTimeout(photoResizeTimer);
+      photoResizeTimer = setTimeout(function () {
+        if (photoColCount() !== photoCols) buildPhotoColumns(photoList);
+      }, 220);
+    });
   }
 
   function buildVideos(videos) {
