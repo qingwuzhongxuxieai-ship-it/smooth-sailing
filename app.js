@@ -1,6 +1,6 @@
-/* 刘一帆 · 一帆风顺
+/* 刘一帆 · 故事集
    想改内容 → 打开 data.js
-   这个文件负责：夜海动画、计时、清单打勾、星愿、滚动出现。 */
+   这个文件负责：排版渲染、目录、阅读进度、照片灯箱、清单、星愿、夜海动画。 */
 
 (function () {
   'use strict';
@@ -8,6 +8,9 @@
   var CFG = window.YIFAN || {};
   var $ = function (id) { return document.getElementById(id); };
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
   function store(key, val) {
     try {
@@ -16,90 +19,297 @@
     } catch (e) { return null; }
   }
 
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function readMinutes(text) {
+    var n = (text || '').length;
+    return Math.max(1, Math.round(n / 400));
+  }
+
+  var CHAPTERS = [];   // { id, label, title }
+
   /* ==========================================================
-     一、把 data.js 里的文字填进页面
+     一、封面 / 序 / 目录
      ========================================================== */
 
-  function fillText() {
-    document.title = (CFG.name || '刘一帆') + ' · 一帆风顺';
+  function fillCoverAndForeword() {
+    document.title = (CFG.name || '刘一帆') + ' · ' + (CFG.bookTitle || '故事集');
 
-    var heroName = $('heroName');
-    if (heroName) heroName.textContent = CFG.name || '刘一帆';
-    var mirror = $('heroMirror');
-    if (mirror) mirror.textContent = CFG.name || '刘一帆';
-    var heroLine = $('heroLine');
-    if (heroLine) heroLine.textContent = CFG.heroLine || '';
+    var n = $('coverName'); if (n) n.textContent = CFG.name || '刘一帆';
+    var m = $('coverMirror'); if (m) m.textContent = CFG.name || '刘一帆';
+    var b = $('coverBook'); if (b) b.textContent = CFG.bookTitle || '故事集';
+    var l = $('coverLine'); if (l) l.textContent = CFG.coverLine || '';
 
-    var nameIntro = $('nameIntro');
-    if (nameIntro) nameIntro.textContent = CFG.nameIntro || '';
-    var nameOutro = $('nameOutro');
-    if (nameOutro) nameOutro.textContent = CFG.nameOutro || '';
-
-    var grid = $('glyphGrid');
-    if (grid) {
-      grid.innerHTML = '';
-      (CFG.nameStory || []).forEach(function (item) {
-        var card = document.createElement('div');
-        card.className = 'glyph-card reveal';
-        var g = document.createElement('span');
-        g.className = 'glyph';
-        g.textContent = item.glyph;
-        var p = document.createElement('p');
-        p.textContent = item.text;
-        card.appendChild(g);
-        card.appendChild(p);
-        grid.appendChild(card);
-      });
+    var ft = $('forewordTitle'); if (ft) ft.textContent = CFG.forewordTitle || '写在前面';
+    var fb = $('forewordBody');
+    if (fb) {
+      fb.innerHTML = '';
+      (CFG.foreword || []).forEach(function (p) { fb.appendChild(el('p', null, p)); });
     }
+  }
 
-    var listTitle = $('listTitle');
-    if (listTitle) listTitle.textContent = CFG.listTitle || '想和你一起做的事';
+  function buildTOC() {
+    var list = $('tocList');
+    var title = $('tocTitle');
+    var stories = CFG.stories || [];
+    if (title) title.textContent = '六个故事·共 ' + stories.length + ' 篇';
 
-    var hint = $('skyHint');
-    if (hint) hint.textContent = CFG.wishHint || '在夜空里点一下，就是一颗星';
+    if (list) list.innerHTML = '';
+    if (!list) return;
 
-    var lt = $('letterTitle');
-    if (lt) lt.textContent = CFG.letterTitle || '写给你的信';
+    stories.forEach(function (s, i) {
+      var li = el('li', 'toc-item');
+      var a = el('a');
+      a.href = '#story-' + (i + 1);
 
-    var body = $('letterBody');
-    if (body) {
-      body.innerHTML = '';
-      (CFG.letter || []).forEach(function (para) {
-        var p = document.createElement('p');
-        p.textContent = para;
-        body.appendChild(p);
-      });
-    }
-    var sign = $('letterSign');
-    if (sign) sign.textContent = CFG.letterSign || '';
+      a.appendChild(el('span', 'toc-num', pad2(i + 1)));
+      a.appendChild(el('span', 'toc-t', s.title));
+      a.appendChild(el('span', 'toc-lead'));
+      a.appendChild(el('span', 'toc-p', '约 ' + readMinutes((s.body || []).join('')) + ' 分钟'));
 
-    var fl = $('footLeft');
-    if (fl) fl.textContent = CFG.footerLeft || '';
-    var fr = $('footRight');
-    if (fr) fr.textContent = CFG.footerRight || '';
+      li.appendChild(a);
+      list.appendChild(li);
+    });
   }
 
   /* ==========================================================
-     二、首屏时钟
+     二、故事
      ========================================================== */
 
-  var WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+  function buildStories() {
+    var box = $('stories');
+    if (!box) return;
+    var stories = CFG.stories || [];
+    box.innerHTML = '';
+    CHAPTERS = [{ id: 'foreword', label: '序', title: '写在前面' }];
 
-  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    stories.forEach(function (s, i) {
+      var id = 'story-' + (i + 1);
+      CHAPTERS.push({ id: id, label: pad2(i + 1), title: s.title });
 
-  function renderHeroClock() {
+      var art = el('article', 'story');
+      art.id = id;
+      art.setAttribute('aria-labelledby', id + '-title');
+
+      var head = el('header', 'story-head');
+      head.appendChild(el('span', 'story-num', '第 ' + pad2(i + 1) + ' 篇'));
+
+      var h2 = el('h2', 'story-title', s.title);
+      h2.id = id + '-title';
+      head.appendChild(h2);
+
+      if (s.subtitle) head.appendChild(el('p', 'story-sub', s.subtitle));
+
+      var chars = (s.body || []).join('').length;
+      head.appendChild(el('p', 'story-meta',
+        chars + ' 字 · 约 ' + readMinutes((s.body || []).join('')) + ' 分钟'));
+      art.appendChild(head);
+
+      var body = el('div', 'prose story-body');
+      (s.body || []).forEach(function (p) { body.appendChild(el('p', null, p)); });
+      art.appendChild(body);
+
+      var nav = el('nav', 'story-nav');
+      nav.setAttribute('aria-label', '篇章导航');
+      if (i > 0) {
+        var prev = el('a', null, '← ' + stories[i - 1].title);
+        prev.href = '#story-' + i;
+        nav.appendChild(prev);
+      } else {
+        nav.appendChild(el('span', 'spacer'));
+      }
+      var mid = el('a', 'mid', '目录');
+      mid.href = '#toc';
+      nav.appendChild(mid);
+      if (i < stories.length - 1) {
+        var next = el('a', null, stories[i + 1].title + ' →');
+        next.href = '#story-' + (i + 2);
+        nav.appendChild(next);
+      } else {
+        nav.appendChild(el('span', 'spacer'));
+      }
+      art.appendChild(nav);
+
+      box.appendChild(art);
+    });
+  }
+
+  /* ==========================================================
+     三、照片
+     ========================================================== */
+
+  var photoList = [];
+  var photoIndex = 0;
+
+  function buildPhotos() {
+    var photos = CFG.photos || [];
+    var sec = $('photos');
+    var flow = $('photoFlow');
+    if (!sec || !flow) return;
+
+    if (!photos.length) { sec.hidden = true; return; }
+
+    sec.hidden = false;
+    var t = $('photosTitle'); if (t) t.textContent = CFG.photosTitle || '照片';
+    var nt = $('photosNote'); if (nt) nt.textContent = CFG.photosNote || '';
+
+    // 占用目录/侧栏的一个位置
+    CHAPTERS.push({ id: 'photos', label: '照片', title: CFG.photosTitle || '照片' });
+
+    flow.innerHTML = '';
+    photoList = [];
+
+    photos.forEach(function (p, i) {
+      var fig = el('figure', 'photo');
+      fig.setAttribute('role', 'button');
+      fig.setAttribute('tabindex', '0');
+      fig.setAttribute('aria-label', '看大图：' + (p.caption || '照片 ' + (i + 1)));
+
+      var img = document.createElement('img');
+      img.src = p.src;
+      img.alt = p.alt || p.caption || ('照片 ' + (i + 1));
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      fig.appendChild(img);
+
+      if (p.caption) fig.appendChild(el('figcaption', null, p.caption));
+
+      (function (idx) {
+        fig.addEventListener('click', function () { openLightbox(idx); });
+        fig.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); }
+        });
+      })(photoList.length);
+
+      photoList.push(p);
+      flow.appendChild(fig);
+    });
+  }
+
+  function openLightbox(i) {
+    if (!photoList.length) return;
+    photoIndex = (i + photoList.length) % photoList.length;
+    var p = photoList[photoIndex];
+    var lb = $('lightbox');
+    var img = $('lbImg');
+    var cap = $('lbCap');
+    if (!lb || !img) return;
+
+    img.src = p.src;
+    img.alt = p.alt || p.caption || '';
+    if (cap) cap.textContent = p.caption || '';
+
+    lb.hidden = false;
+    requestAnimationFrame(function () { lb.classList.add('is-open'); });
+    $('lbClose').focus();
+  }
+
+  function closeLightbox() {
+    var lb = $('lightbox');
+    if (!lb) return;
+    lb.classList.remove('is-open');
+    setTimeout(function () {
+      if (!lb.classList.contains('is-open')) lb.hidden = true;
+    }, 240);
+  }
+
+  function bindLightbox() {
+    var lb = $('lightbox');
+    if (!lb) return;
+    $('lbClose').addEventListener('click', closeLightbox);
+    $('lbPrev').addEventListener('click', function () { openLightbox(photoIndex - 1); });
+    $('lbNext').addEventListener('click', function () { openLightbox(photoIndex + 1); });
+    lb.addEventListener('click', function (e) {
+      if (e.target === lb) closeLightbox();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (lb.hidden) return;
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') openLightbox(photoIndex - 1);
+      else if (e.key === 'ArrowRight') openLightbox(photoIndex + 1);
+    });
+  }
+
+  /* ==========================================================
+     四、章节导航（侧栏）+ 阅读进度
+     ========================================================== */
+
+  function buildRail() {
+    var rail = $('rail');
+    if (!rail) return;
+    var extra = [
+      { id: 'sec-list', label: '未完', title: CFG.listTitle || '想一起做的事' },
+      { id: 'sec-wish', label: '留白', title: CFG.wishesTitle || '留一颗星' },
+      { id: 'sec-letter', label: '后记', title: CFG.letterTitle || '后记' }
+    ];
+    var all = CHAPTERS.concat(extra);
+    rail.innerHTML = '';
+    all.forEach(function (c) {
+      var a = el('a', null, c.label);
+      a.href = '#' + c.id;
+      a.setAttribute('title', c.title);
+      rail.appendChild(a);
+    });
+    rail.hidden = false;
+  }
+
+  function initReadingProgress() {
+    var bar = $('readbar');
+    var railLinks = document.querySelectorAll('.rail a');
+    var ticking = false;
+
+    function update() {
+      ticking = false;
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      var p = h > 0 ? Math.min(1, Math.max(0, window.scrollY / h)) : 0;
+      if (bar) bar.style.width = (p * 100).toFixed(2) + '%';
+
+      var reading = window.scrollY > window.innerHeight * 0.92;
+      document.body.classList.toggle('reading', reading);
+    }
+
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+
+    // 当前章节高亮
+    var sections = [];
+    for (var i = 0; i < railLinks.length; i++) {
+      var id = (railLinks[i].getAttribute('href') || '').replace('#', '');
+      var node = document.getElementById(id);
+      if (node) sections.push({ node: node, link: railLinks[i] });
+    }
+    if (!sections.length || !('IntersectionObserver' in window)) return;
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        for (var k = 0; k < sections.length; k++) {
+          sections[k].link.classList.toggle('on', sections[k].node === en.target);
+        }
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+
+    sections.forEach(function (s) { io.observe(s.node); });
+  }
+
+  /* ==========================================================
+     五、封面时钟 + 版权页
+     ========================================================== */
+
+  function renderCoverClock() {
     var d = new Date();
-    var c = $('heroClock');
-    var dt = $('heroDate');
+    var c = $('coverClock');
+    var dt = $('coverDate');
     if (c) c.textContent = pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
     if (dt) dt.textContent = d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 · 星期' + WEEK[d.getDay()];
   }
-
-  /* ==========================================================
-     三、计时
-     ========================================================== */
-
-  var counterMode = '';
 
   function ensureUnits(labels) {
     var row = $('counterRow');
@@ -109,15 +319,10 @@
     row.setAttribute('data-mode', key);
     row.innerHTML = '';
     labels.forEach(function (l) {
-      var wrap = document.createElement('div');
-      wrap.className = 'unit';
-      var b = document.createElement('b');
-      b.textContent = '0';
-      var s = document.createElement('span');
-      s.textContent = l;
-      wrap.appendChild(b);
-      wrap.appendChild(s);
-      row.appendChild(wrap);
+      var w = el('div', 'unit');
+      w.appendChild(el('b', null, '0'));
+      w.appendChild(el('span', null, l));
+      row.appendChild(w);
     });
   }
 
@@ -130,8 +335,8 @@
     }
   }
 
-  function renderCounter() {
-    var label = $('counterLabel');
+  function renderColophon() {
+    var label = $('colophonLabel');
     var note = $('counterNote');
     if (!label) return;
 
@@ -139,16 +344,10 @@
     var valid = t && !isNaN(t.getTime());
 
     if (!valid) {
-      // 还没有设定起点 —— 安静地显示「此刻」
-      counterMode = 'now';
-      label.textContent = '此刻';
+      label.textContent = '写于';
       ensureUnits(['年', '月', '日']);
       var d = new Date();
-      setUnitValues([
-        String(d.getFullYear()),
-        String(d.getMonth() + 1),
-        pad2(d.getDate())
-      ]);
+      setUnitValues([String(d.getFullYear()), String(d.getMonth() + 1), pad2(d.getDate())]);
       if (note) {
         note.textContent = '星期' + WEEK[d.getDay()] + ' · ' +
           pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
@@ -160,31 +359,29 @@
     var future = diff < 0;
     var ms = Math.abs(diff);
 
-    counterMode = future ? 'countdown' : 'count';
-    label.textContent = future ? '距离那一天' : (CFG.beginLabel || '在一起');
+    label.textContent = future ? '距离那一天' : (CFG.beginLabel || '和你在一起');
     ensureUnits(['天', '时', '分', '秒']);
 
     var sec = Math.floor(ms / 1000);
-    var days = Math.floor(sec / 86400);
-    var hours = Math.floor((sec % 86400) / 3600);
-    var mins = Math.floor((sec % 3600) / 60);
-    var secs = sec % 60;
-
-    setUnitValues([String(days), pad2(hours), pad2(mins), pad2(secs)]);
+    setUnitValues([
+      String(Math.floor(sec / 86400)),
+      pad2(Math.floor((sec % 86400) / 3600)),
+      pad2(Math.floor((sec % 3600) / 60)),
+      pad2(sec % 60)
+    ]);
 
     if (note) {
-      var from = t.getFullYear() + ' 年 ' + (t.getMonth() + 1) + ' 月 ' + t.getDate() + ' 日 ' +
-                 pad2(t.getHours()) + ':' + pad2(t.getMinutes());
-      note.textContent = (future ? '到 ' : '从 ') + from + (future ? '' : ' 起') +
-        (CFG.beginNote ? ' · ' + CFG.beginNote : '');
+      note.textContent = (future ? '到 ' : '从 ') +
+        t.getFullYear() + ' 年 ' + (t.getMonth() + 1) + ' 月 ' + t.getDate() + ' 日 ' +
+        pad2(t.getHours()) + ':' + pad2(t.getMinutes()) + (future ? '' : ' 起');
     }
   }
 
   /* ==========================================================
-     四、清单
+     六、清单
      ========================================================== */
 
-  var LIST_KEY = 'liuyifan-list-v1';
+  var LIST_KEY = 'liuyifan-list-v2';
   var doneSet = {};
 
   function loadList() {
@@ -206,23 +403,18 @@
 
   function buildList() {
     var ul = $('todoList');
+    var title = $('listTitle');
+    if (title) title.textContent = CFG.listTitle || '想一起做的事';
     if (!ul) return;
     ul.innerHTML = '';
     (CFG.list || []).forEach(function (text, i) {
-      var li = document.createElement('li');
-      var btn = document.createElement('button');
+      var li = el('li');
+      var btn = el('button', 'todo');
       btn.type = 'button';
-      btn.className = 'todo reveal';
       btn.setAttribute('data-i', i);
       btn.setAttribute('aria-pressed', 'false');
-
-      var box = document.createElement('span');
-      box.className = 'box';
-      var span = document.createElement('span');
-      span.textContent = text;
-
-      btn.appendChild(box);
-      btn.appendChild(span);
+      btn.appendChild(el('span', 'box'));
+      btn.appendChild(el('span', null, text));
       li.appendChild(btn);
       ul.appendChild(li);
     });
@@ -231,11 +423,9 @@
 
   function paintList() {
     var items = document.querySelectorAll('.todo');
-    var total = items.length;
-    var done = 0;
+    var total = items.length, done = 0;
     for (var i = 0; i < items.length; i++) {
-      var idx = Number(items[i].getAttribute('data-i'));
-      var on = !!doneSet[idx];
+      var on = !!doneSet[items[i].getAttribute('data-i')];
       items[i].classList.toggle('done', on);
       items[i].setAttribute('aria-pressed', on ? 'true' : 'false');
       if (on) done++;
@@ -260,7 +450,7 @@
   }
 
   /* ==========================================================
-     五、夜海（首屏背景）
+     七、夜海（封面背景，带省电优化）
      ========================================================== */
 
   function initSea() {
@@ -271,6 +461,7 @@
     var stars = [], glints = [], lanterns = [], shoot = null, nextShoot = 6;
     var moonX = 0, moonY = 0, moonR = 26;
     var t0 = performance.now();
+    var asleep = false;
 
     var LAYERS = [
       { base: 12, amp: 3.2, sp: 0.9, ph: 0.4 },
@@ -286,7 +477,7 @@
     }
 
     function buildScene() {
-      var count = Math.max(90, Math.min(230, Math.round(W * H / 9000)));
+      var count = Math.max(80, Math.min(220, Math.round(W * H / 9000)));
       stars = [];
       for (var i = 0; i < count; i++) {
         var big = Math.random() < 0.022;
@@ -322,7 +513,7 @@
     }
 
     function resize() {
-      DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+      DPR = Math.min(window.devicePixelRatio || 1, W < 700 ? 1.5 : 1.75);
       W = window.innerWidth;
       H = window.innerHeight;
       cvs.width = Math.floor(W * DPR);
@@ -342,7 +533,6 @@
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, hy + 2);
 
-      // 银河
       ctx.save();
       ctx.translate(W * 0.30, hy * 0.44);
       ctx.rotate(-0.52);
@@ -364,14 +554,10 @@
       halo.addColorStop(0.42, 'rgba(226,205,170,0.055)');
       halo.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = halo;
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonR * 9, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(moonX, moonY, moonR * 9, 0, Math.PI * 2); ctx.fill();
 
       ctx.fillStyle = '#f6efe0';
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2); ctx.fill();
 
       ctx.fillStyle = 'rgba(206,192,166,0.30)';
       ctx.beginPath(); ctx.arc(moonX - moonR * 0.30, moonY - moonR * 0.22, moonR * 0.24, 0, Math.PI * 2); ctx.fill();
@@ -385,9 +571,7 @@
         var a = s.a * (0.55 + 0.45 * Math.sin(t * s.sp + s.ph));
         if (a <= 0.02) continue;
         ctx.fillStyle = 'rgba(226,238,252,' + a.toFixed(3) + ')';
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
         if (s.flare) {
           ctx.strokeStyle = 'rgba(226,238,252,' + (a * 0.5).toFixed(3) + ')';
           ctx.lineWidth = 0.7;
@@ -419,9 +603,8 @@
       shoot.y += shoot.vy * dt;
       shoot.life -= dt;
       var k = Math.max(0, shoot.life / 1.25);
-      var len = 0.13;
-      var x2 = shoot.x - shoot.vx * len;
-      var y2 = shoot.y - shoot.vy * len;
+      var x2 = shoot.x - shoot.vx * 0.13;
+      var y2 = shoot.y - shoot.vy * 0.13;
       var g = ctx.createLinearGradient(shoot.x, shoot.y, x2, y2);
       g.addColorStop(0, 'rgba(255,246,225,' + (0.85 * k).toFixed(3) + ')');
       g.addColorStop(0.35, 'rgba(200,222,246,' + (0.35 * k).toFixed(3) + ')');
@@ -429,10 +612,7 @@
       ctx.strokeStyle = g;
       ctx.lineWidth = 1.6;
       ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(shoot.x, shoot.y);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(x2, y2); ctx.stroke();
       if (shoot.life <= 0 || shoot.x < -200 || shoot.x > W + 200 || shoot.y > hy) shoot = null;
     }
 
@@ -447,10 +627,7 @@
 
     function moonTrail(t) {
       ctx.save();
-
-      // 月亮在水面的一层底光
       var span = (H - hy) * 0.72;
-      ctx.save();
       ctx.translate(moonX, hy + span * 0.28);
       ctx.scale(1, span / 96);
       var rg = ctx.createRadialGradient(0, 0, 0, 0, 0, 96);
@@ -458,9 +635,7 @@
       rg.addColorStop(0.42, 'rgba(236,208,152,0.055)');
       rg.addColorStop(1, 'rgba(236,208,152,0)');
       ctx.fillStyle = rg;
-      ctx.beginPath();
-      ctx.arc(0, 0, 96, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, 96, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
 
       for (var i = 0; i < glints.length; i++) {
@@ -475,7 +650,6 @@
         ctx.fillStyle = 'rgba(236,208,152,' + a.toFixed(3) + ')';
         ctx.fillRect(moonX + gl.ox - w / 2 + wob * spread * 0.45, y, w, 1.2);
       }
-      ctx.restore();
     }
 
     function wave(layer, t, top, bottom) {
@@ -508,7 +682,6 @@
       ctx.save();
       ctx.translate(bx, by);
 
-      // 船身
       ctx.beginPath();
       ctx.moveTo(-46 * S, 0);
       ctx.quadraticCurveTo(-30 * S, 21 * S, 0, 21 * S);
@@ -521,7 +694,6 @@
       ctx.lineWidth = 0.9;
       ctx.stroke();
 
-      // 桅杆
       ctx.beginPath();
       ctx.moveTo(-5 * S, 0);
       ctx.lineTo(-5 * S, -86 * S);
@@ -530,7 +702,6 @@
       ctx.lineCap = 'round';
       ctx.stroke();
 
-      // 主帆
       var sg = ctx.createLinearGradient(-5 * S, -86 * S, 44 * S, 0);
       sg.addColorStop(0, 'rgba(255,250,238,0.95)');
       sg.addColorStop(0.55, 'rgba(244,226,190,0.80)');
@@ -546,7 +717,6 @@
       ctx.lineWidth = 0.8;
       ctx.stroke();
 
-      // 前帆
       ctx.beginPath();
       ctx.moveTo(-8 * S, -74 * S);
       ctx.quadraticCurveTo(-26 * S, -40 * S, -34 * S, -7 * S);
@@ -555,18 +725,13 @@
       ctx.fillStyle = 'rgba(246,232,203,0.62)';
       ctx.fill();
 
-      // 船尾灯
       var lg = ctx.createRadialGradient(-30 * S, -6 * S, 0, -30 * S, -6 * S, 26 * S);
       lg.addColorStop(0, 'rgba(255,198,116,0.55)');
       lg.addColorStop(1, 'rgba(255,180,96,0)');
       ctx.fillStyle = lg;
-      ctx.beginPath();
-      ctx.arc(-30 * S, -6 * S, 26 * S, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(-30 * S, -6 * S, 26 * S, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = 'rgba(255,216,158,0.95)';
-      ctx.beginPath();
-      ctx.arc(-30 * S, -6 * S, 1.9 * S, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(-30 * S, -6 * S, 1.9 * S, 0, Math.PI * 2); ctx.fill();
 
       ctx.restore();
     }
@@ -582,13 +747,9 @@
         g.addColorStop(0.35, 'rgba(255,190,104,0.20)');
         g.addColorStop(1, 'rgba(255,180,96,0)');
         ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(lx, ly, R, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(255,220,164,0.92)';
-        ctx.beginPath();
-        ctx.arc(lx, ly, 2.1 * L.s, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(lx, ly, 2.1 * L.s, 0, Math.PI * 2); ctx.fill();
       }
     }
 
@@ -615,31 +776,30 @@
       frame(performance.now());
     } else {
       (function loop(now) {
-        frame(now || performance.now());
         requestAnimationFrame(loop);
+        // 省电：页面不可见、或已经翻过封面时不再重绘
+        var far = window.scrollY > window.innerHeight * 1.35;
+        if (document.hidden || far) { asleep = true; return; }
+        asleep = false;
+        frame(now || performance.now());
       })();
     }
 
-    var resizeTimer = null;
+    var rt = null;
     window.addEventListener('resize', function () {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () {
         resize();
-        if (reduced) frame(performance.now());
+        if (reduced || asleep) frame(performance.now());
       }, 180);
     });
-
-    window.addEventListener('scroll', function () {
-      var p = Math.min(1, window.scrollY / Math.max(1, window.innerHeight));
-      cvs.style.opacity = String(1 - p * 0.42);
-    }, { passive: true });
   }
 
   /* ==========================================================
-     六、星愿
+     八、星愿
      ========================================================== */
 
-  var WISH_KEY = 'liuyifan-wishes-v1';
+  var WISH_KEY = 'liuyifan-wishes-v2';
 
   function initSky() {
     var wrap = document.querySelector('.sky-wrap');
@@ -647,12 +807,10 @@
     if (!wrap || !cvs) return;
     var ctx = cvs.getContext('2d');
     var W = 0, H = 0, DPR = 1;
-    var ambient = [];
-    var wishes = [];
-    var pending = null;
-    var tipTimer = null;
-    var hoverI = -1;
+    var ambient = [], wishes = [];
+    var pending = null, tipTimer = null, hoverI = -1;
     var t0 = performance.now();
+    var visible = false;
 
     var form = $('wishForm');
     var input = $('wishInput');
@@ -673,18 +831,12 @@
       });
     }
 
-    function saveWishes() {
-      store(WISH_KEY, JSON.stringify(wishes));
-    }
+    function saveWishes() { store(WISH_KEY, JSON.stringify(wishes)); }
 
     function renderA11y() {
       if (!a11y) return;
       a11y.innerHTML = '';
-      wishes.forEach(function (w) {
-        var li = document.createElement('li');
-        li.textContent = w.text;
-        a11y.appendChild(li);
-      });
+      wishes.forEach(function (w) { a11y.appendChild(el('li', null, w.text)); });
     }
 
     function resize() {
@@ -695,11 +847,10 @@
       cvs.height = Math.max(1, Math.floor(H * DPR));
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ambient = [];
-      var n = Math.max(70, Math.min(200, Math.round(W * H / 8000)));
+      var n = Math.max(60, Math.min(170, Math.round(W * H / 8000)));
       for (var i = 0; i < n; i++) {
         ambient.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
+          x: Math.random() * W, y: Math.random() * H,
           r: 0.35 + Math.random() * 1.0,
           a: 0.12 + Math.random() * 0.38,
           ph: Math.random() * Math.PI * 2,
@@ -710,32 +861,25 @@
 
     function draw(t) {
       ctx.clearRect(0, 0, W, H);
-
       for (var i = 0; i < ambient.length; i++) {
         var s = ambient[i];
         var a = s.a * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
         if (a <= 0.02) continue;
         ctx.fillStyle = 'rgba(214,230,248,' + a.toFixed(3) + ')';
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
       }
-
       for (var j = 0; j < wishes.length; j++) {
         var w = wishes[j];
-        var x = w.x * W;
-        var y = w.y * H;
+        var x = w.x * W, y = w.y * H;
         var pulse = 0.62 + 0.38 * Math.sin(t * 1.5 + j * 1.7);
         var isHover = j === hoverI;
-
-        var halo = ctx.createRadialGradient(x, y, 0, x, y, 34 * (isHover ? 1.35 : 1));
+        var R = 34 * (isHover ? 1.35 : 1);
+        var halo = ctx.createRadialGradient(x, y, 0, x, y, R);
         halo.addColorStop(0, 'rgba(255,226,168,' + (0.42 * pulse).toFixed(3) + ')');
         halo.addColorStop(0.45, 'rgba(255,206,132,0.10)');
         halo.addColorStop(1, 'rgba(255,196,110,0)');
         ctx.fillStyle = halo;
-        ctx.beginPath();
-        ctx.arc(x, y, 34 * (isHover ? 1.35 : 1), 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
 
         ctx.strokeStyle = 'rgba(255,226,168,' + (0.30 * pulse).toFixed(3) + ')';
         ctx.lineWidth = 1;
@@ -745,15 +889,13 @@
         ctx.stroke();
 
         ctx.fillStyle = 'rgba(255,244,214,0.98)';
-        ctx.beginPath();
-        ctx.arc(x, y, isHover ? 3.1 : 2.5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, isHover ? 3.1 : 2.5, 0, Math.PI * 2); ctx.fill();
       }
     }
 
     function loop(now) {
-      draw((now - t0) / 1000);
-      if (!reduced) requestAnimationFrame(loop);
+      if (visible && !document.hidden) draw((now - t0) / 1000);
+      requestAnimationFrame(loop);
     }
 
     function place(node, x, y) {
@@ -762,7 +904,7 @@
     }
 
     function openForm(x, y) {
-      pending = { x: x / W, y: y / H, px: x, py: y };
+      pending = { x: x / W, y: y / H };
       place(form, x, y);
       form.hidden = false;
       if (hint) hint.classList.add('gone');
@@ -776,11 +918,6 @@
       if (hint && !wishes.length) hint.classList.remove('gone');
     }
 
-    function hideTip() {
-      if (tip) tip.hidden = true;
-      tipTimer = null;
-    }
-
     function showTip(i) {
       var w = wishes[i];
       if (!w || !tip) return;
@@ -788,78 +925,58 @@
       place(tip, w.x * W, w.y * H - 14);
       tip.hidden = false;
       clearTimeout(tipTimer);
-      tipTimer = setTimeout(hideTip, 3600);
+      tipTimer = setTimeout(function () { tip.hidden = true; }, 3600);
     }
 
     function hit(x, y) {
       var best = -1, bestD = 20;
       for (var i = 0; i < wishes.length; i++) {
-        var dx = wishes[i].x * W - x;
-        var dy = wishes[i].y * H - y;
+        var dx = wishes[i].x * W - x, dy = wishes[i].y * H - y;
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < bestD) { bestD = d; best = i; }
       }
       return best;
     }
 
-    function addWish(text, x, y) {
-      wishes.push({ text: text, x: x, y: y });
-      saveWishes();
-      renderA11y();
-      if (hint) hint.classList.add('gone');
-    }
-
     wrap.addEventListener('click', function (e) {
       if (form.contains(e.target)) return;
       var rect = wrap.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
+      var x = e.clientX - rect.left, y = e.clientY - rect.top;
       var i = hit(x, y);
-      if (i >= 0) {
-        hideTip();
-        showTip(i);
-        return;
-      }
-      hideTip();
+      if (i >= 0) { tip.hidden = true; showTip(i); return; }
+      tip.hidden = true;
       openForm(x, y);
     });
 
     wrap.addEventListener('mousemove', function (e) {
       var rect = wrap.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      var i = hit(x, y);
+      var i = hit(e.clientX - rect.left, e.clientY - rect.top);
       if (i !== hoverI) {
         hoverI = i;
         wrap.style.cursor = i >= 0 ? 'pointer' : 'crosshair';
       }
     });
-
     wrap.addEventListener('mouseleave', function () { hoverI = -1; });
 
-    if (form) {
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var text = (input.value || '').trim();
-        if (!text || !pending) { closeForm(); return; }
-        addWish(text.slice(0, 40), pending.x, pending.y);
-        closeForm();
-      });
-    }
-    var cancel = $('wishCancel');
-    if (cancel) cancel.addEventListener('click', function (e) { e.stopPropagation(); closeForm(); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = (input.value || '').trim();
+      if (!text || !pending) { closeForm(); return; }
+      wishes.push({ text: text.slice(0, 40), x: pending.x, y: pending.y });
+      saveWishes();
+      renderA11y();
+      if (hint) hint.classList.add('gone');
+      closeForm();
+    });
 
-    var addBtn = $('skyAdd');
-    if (addBtn) {
-      addBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (!form.hidden) { closeForm(); return; }
-        openForm(W / 2, H / 2);
-      });
-    }
-
+    $('wishCancel').addEventListener('click', function (e) { e.stopPropagation(); closeForm(); });
+    $('skyAdd').addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!form.hidden) { closeForm(); return; }
+      openForm(W / 2, H / 2);
+    });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && form && !form.hidden) closeForm();
+      if (e.key === 'Escape' && !form.hidden) closeForm();
     });
 
     wishes = loadWishes();
@@ -867,6 +984,14 @@
     renderA11y();
     if (wishes.length && hint) hint.classList.add('gone');
     draw(0);
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (ens) {
+        visible = ens[0].isIntersecting;
+      }, { rootMargin: '120px' }).observe(wrap);
+    } else {
+      visible = true;
+    }
     if (!reduced) requestAnimationFrame(loop);
 
     var rt = null;
@@ -877,50 +1002,62 @@
   }
 
   /* ==========================================================
-     七、滚动出现
+     九、后记 / 页脚
      ========================================================== */
 
-  function initReveal() {
-    var nodes = document.querySelectorAll('.reveal');
-    if (!('IntersectionObserver' in window) || reduced) {
-      for (var i = 0; i < nodes.length; i++) nodes[i].classList.add('in');
-      return;
+  function fillLetter() {
+    var t = $('letterTitle'); if (t) t.textContent = CFG.letterTitle || '后记';
+    var b = $('letterBody');
+    if (b) {
+      b.innerHTML = '';
+      (CFG.letter || []).forEach(function (p) { b.appendChild(el('p', null, p)); });
     }
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) {
-          en.target.classList.add('in');
-          io.unobserve(en.target);
-        }
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    var s = $('letterSign'); if (s) s.textContent = CFG.letterSign || '';
 
-    for (var j = 0; j < nodes.length; j++) io.observe(nodes[j]);
+    var wt = $('wishesTitle'); if (wt) wt.textContent = CFG.wishesTitle || '留一颗星';
+    var wi = $('wishIntro'); if (wi) wi.textContent = CFG.wishIntro || '';
+    var sh = $('skyHint'); if (sh) sh.textContent = CFG.wishHint || '在夜空里点一下，就是一颗星';
 
-    // 兜底：万一观察器没触发，2.5 秒后全部显示
-    setTimeout(function () {
-      var all = document.querySelectorAll('.reveal');
-      for (var k = 0; k < all.length; k++) all[k].classList.add('in');
-    }, 2500);
+    var fl = $('footLeft'); if (fl) fl.textContent = CFG.footerLeft || '';
+    var fr = $('footRight'); if (fr) fr.textContent = CFG.footerRight || '';
   }
 
   /* ==========================================================
-     八、启动
+     十、启动
      ========================================================== */
 
   function init() {
-    fillText();
+    fillCoverAndForeword();
+    buildStories();
+    buildPhotos();
+    buildTOC();
+    buildRail();
     buildList();
     bindList();
-    renderCounter();
-    renderHeroClock();
+    fillLetter();
+    bindLightbox();
+    renderCoverClock();
+    renderColophon();
     initSea();
     initSky();
-    initReveal();
+    initReadingProgress();
 
+    var coverVisible = true;
+    if ('IntersectionObserver' in window) {
+      var cover = document.querySelector('.cover');
+      if (cover) {
+        new IntersectionObserver(function (ens) {
+          coverVisible = ens[0].isIntersecting;
+        }).observe(cover);
+      }
+    }
+
+    // 只有封面在视野里时才刷新时钟
     setInterval(function () {
-      renderCounter();
-      renderHeroClock();
+      if (!document.hidden && coverVisible) renderCoverClock();
+    }, 1000);
+    setInterval(function () {
+      if (!document.hidden) renderColophon();
     }, 1000);
   }
 
@@ -931,8 +1068,8 @@
       init();
     }
   } catch (err) {
-    // 出错也不能让页面空着
-    var all = document.querySelectorAll('.reveal');
-    for (var i = 0; i < all.length; i++) all[i].classList.add('in');
+    // 出错也不留白屏
+    var box = $('stories');
+    if (box) box.textContent = '';
   }
 })();

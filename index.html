@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>刘一帆 · 一帆风顺</title>
-<meta name="description" content="一片夜海，一叶风帆，一个只写给一个人的网站。">
+<title>刘一帆 · 故事集</title>
+<meta name="description" content="一本只写给一个人的故事集。">
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,99 +14,130 @@
 <canvas id="sea" aria-hidden="true"></canvas>
 <div class="vignette" aria-hidden="true"></div>
 
+<div class="readbar" aria-hidden="true"><i id="readbar"></i></div>
+
+<nav class="rail" id="rail" aria-label="章节导航" hidden></nav>
+
+<a class="skip" href="#main">跳到正文</a>
+
 <div class="page">
 
-  <!-- ============ 首屏 ============ -->
-  <header class="hero">
-    <div class="hero-inner">
-      <p class="hero-eyebrow reveal">致</p>
-      <h1 class="hero-name reveal" id="heroName">刘一帆</h1>
-      <span class="hero-name-mirror" id="heroMirror" aria-hidden="true"></span>
-      <p class="hero-line reveal" id="heroLine">愿你此生，一帆风顺</p>
+  <!-- ============ 封面 ============ -->
+  <header class="cover">
+    <div class="cover-inner">
+      <p class="cover-eyebrow">致</p>
+      <h1 class="cover-name" id="coverName">刘一帆</h1>
+      <span class="cover-mirror" id="coverMirror" aria-hidden="true"></span>
+      <p class="cover-book" id="coverBook">故事集</p>
+      <p class="cover-line" id="coverLine"></p>
     </div>
 
-    <div class="hero-meta">
-      <span class="hero-clock" id="heroClock">--:--:--</span>
-      <span class="hero-date" id="heroDate">—</span>
+    <div class="cover-meta">
+      <span class="cover-clock" id="coverClock">--:--:--</span>
+      <span class="cover-date" id="coverDate">—</span>
     </div>
 
-    <div class="hero-cue" aria-hidden="true">
-      <span>往下</span>
-      <i></i>
-    </div>
+    <a class="cover-cue" href="#foreword">
+      <span>翻开</span>
+      <i aria-hidden="true"></i>
+    </a>
   </header>
 
-  <!-- ============ 名字 ============ -->
-  <section class="sec" id="sec-name">
-    <p class="eyebrow reveal">名字</p>
-    <h2 class="sec-title reveal" id="nameIntro"></h2>
+  <main id="main">
 
-    <div class="glyph-grid" id="glyphGrid"></div>
+    <!-- ============ 写在前面 ============ -->
+    <section class="sec" id="foreword">
+      <p class="eyebrow">序</p>
+      <h2 class="sec-title" id="forewordTitle"></h2>
+      <div class="prose" id="forewordBody"></div>
+    </section>
 
-    <p class="sec-text reveal" id="nameOutro"></p>
-  </section>
+    <!-- ============ 目录 ============ -->
+    <section class="sec" id="toc">
+      <p class="eyebrow">目录</p>
+      <h2 class="sec-title" id="tocTitle"></h2>
+      <ol class="toc-list" id="tocList"></ol>
+    </section>
 
-  <!-- ============ 时间 ============ -->
-  <section class="sec" id="sec-time">
-    <p class="eyebrow reveal">时间</p>
-    <div class="counter-card reveal">
-      <span class="counter-label" id="counterLabel">此刻</span>
-      <div class="counter-row" id="counterRow"></div>
-      <p class="counter-note" id="counterNote"></p>
-    </div>
-  </section>
+    <!-- ============ 故事 ============ -->
+    <div id="stories"></div>
 
-  <!-- ============ 清单 ============ -->
-  <section class="sec" id="sec-list">
-    <p class="eyebrow reveal">清单</p>
-    <h2 class="sec-title reveal" id="listTitle"></h2>
-    <div class="progress-wrap reveal">
-      <div class="progress"><i id="listBar"></i></div>
-      <span class="progress-text" id="listCount">0 / 0</span>
-    </div>
-    <ul class="todo-list" id="todoList"></ul>
-    <p class="hint reveal">点一下前面的圆圈就算完成 · 勾选会记住</p>
-  </section>
+    <!-- ============ 照片 ============ -->
+    <section class="sec" id="photos" hidden>
+      <p class="eyebrow">照片</p>
+      <h2 class="sec-title" id="photosTitle"></h2>
+      <p class="sec-note" id="photosNote"></p>
+      <div class="photo-flow" id="photoFlow"></div>
+    </section>
 
-  <!-- ============ 星愿 ============ -->
-  <section class="sec sec-wide" id="sec-wish">
-    <p class="eyebrow reveal">星愿</p>
-    <h2 class="sec-title reveal">把想说的话，放进星星里</h2>
+    <!-- ============ 还没发生的故事 ============ -->
+    <section class="sec" id="sec-list">
+      <p class="eyebrow">未完</p>
+      <h2 class="sec-title" id="listTitle"></h2>
+      <div class="progress-wrap">
+        <div class="progress"><i id="listBar"></i></div>
+        <span class="progress-text" id="listCount">0 / 0</span>
+      </div>
+      <ul class="todo-list" id="todoList"></ul>
+      <p class="hint">点一下前面的圆圈就算完成 · 勾选会记住</p>
+    </section>
 
-    <div class="sky-wrap reveal">
-      <canvas id="sky" aria-hidden="true"></canvas>
+    <!-- ============ 星愿 ============ -->
+    <section class="sec sec-wide" id="sec-wish">
+      <p class="eyebrow">留白</p>
+      <h2 class="sec-title" id="wishesTitle"></h2>
+      <p class="sec-note" id="wishIntro"></p>
 
-      <p class="sky-hint" id="skyHint">在夜空里点一下，就是一颗星</p>
-      <button type="button" class="sky-add" id="skyAdd">＋ 写一颗星</button>
+      <div class="sky-wrap">
+        <canvas id="sky" aria-hidden="true"></canvas>
+        <p class="sky-hint" id="skyHint">在夜空里点一下，就是一颗星</p>
+        <button type="button" class="sky-add" id="skyAdd">＋ 写一颗星</button>
 
-      <form class="wish-form" id="wishForm" hidden>
-        <input type="text" id="wishInput" maxlength="40" placeholder="写一句想说的话…" autocomplete="off">
-        <button type="submit">点亮</button>
-        <button type="button" class="wish-cancel" id="wishCancel" aria-label="取消">×</button>
-      </form>
+        <form class="wish-form" id="wishForm" hidden>
+          <input type="text" id="wishInput" maxlength="40" placeholder="写一句想说的话…" autocomplete="off">
+          <button type="submit">点亮</button>
+          <button type="button" class="wish-cancel" id="wishCancel" aria-label="取消">×</button>
+        </form>
 
-      <div class="wish-tip" id="wishTip" hidden></div>
-    </div>
+        <div class="wish-tip" id="wishTip" hidden></div>
+      </div>
 
-    <ul class="sr-only" id="wishA11y" aria-live="polite"></ul>
-    <p class="hint reveal">点空白处可以再加一颗 · 点已有的星星可以看它说了什么</p>
-  </section>
+      <ul class="sr-only" id="wishA11y" aria-live="polite"></ul>
+      <p class="hint">点空白处再加一颗 · 点已有的星星可以看它说了什么</p>
+    </section>
 
-  <!-- ============ 信 ============ -->
-  <section class="sec" id="sec-letter">
-    <p class="eyebrow reveal">信</p>
-    <article class="paper reveal">
-      <h2 class="paper-title" id="letterTitle"></h2>
-      <div class="paper-body" id="letterBody"></div>
-      <p class="paper-sign" id="letterSign"></p>
-    </article>
-  </section>
+    <!-- ============ 后记 ============ -->
+    <section class="sec" id="sec-letter">
+      <p class="eyebrow">后记</p>
+      <article class="paper">
+        <h2 class="paper-title" id="letterTitle"></h2>
+        <div class="paper-body prose" id="letterBody"></div>
+        <p class="paper-sign" id="letterSign"></p>
+      </article>
 
-  <footer class="site-foot">
-    <span id="footLeft"></span>
-    <span id="footRight"></span>
-  </footer>
+      <div class="colophon">
+        <span class="colophon-label" id="colophonLabel">写于</span>
+        <div class="counter-row" id="counterRow"></div>
+        <p class="counter-note" id="counterNote"></p>
+      </div>
+    </section>
 
+    <footer class="site-foot">
+      <span id="footLeft"></span>
+      <span id="footRight"></span>
+    </footer>
+
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lb-close" id="lbClose" aria-label="关闭">×</button>
+  <button type="button" class="lb-nav prev" id="lbPrev" aria-label="上一张">‹</button>
+  <button type="button" class="lb-nav next" id="lbNext" aria-label="下一张">›</button>
+  <figure class="lb-figure">
+    <img id="lbImg" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
 </div>
 
 <script src="data.js"></script>
