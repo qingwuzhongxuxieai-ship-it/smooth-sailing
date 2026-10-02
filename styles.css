@@ -547,6 +547,46 @@ body.reading .vignette{
   color:var(--ink-3);
 }
 
+.vlog-pick{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+.vlog-pick:empty{display:none}
+
+.vlog-pick button{
+  appearance:none;
+  font-family:inherit;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  padding:9px 18px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.03);
+  color:var(--ink-3);
+  cursor:pointer;
+  transition:background .2s ease, border-color .2s ease, color .2s ease;
+}
+.vlog-pick button b{
+  font-family:var(--serif);
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:.06em;
+}
+.vlog-pick button span{font-size:11px;letter-spacing:.04em;opacity:.75}
+.vlog-pick button:hover{background:rgba(var(--gold-rgb),.10);color:var(--ink-2)}
+.vlog-pick button[aria-pressed="true"]{
+  border-color:rgba(var(--gold-rgb),.55);
+  background:rgba(var(--gold-rgb),.14);
+  color:var(--ink);
+}
+.vlog-pick button[aria-pressed="true"] b{color:var(--gold)}
+.vlog-pick button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
 .vlog video{
   display:block;
   width:auto;

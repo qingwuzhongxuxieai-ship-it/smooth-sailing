@@ -154,7 +154,9 @@
     var albums = (CFG.albums || []).filter(function (a) {
       return (a.photos && a.photos.length) || (a.videos && a.videos.length);
     });
-    var hasVlog = !!(CFG.vlog && CFG.vlog.src);
+    var versions = (CFG.vlog && CFG.vlog.versions) ||
+                   (CFG.vlog && CFG.vlog.src ? [{ src: CFG.vlog.src }] : []);
+    var hasVlog = versions.length > 0;
 
     if (!albums.length && !hasVlog) { sec.hidden = true; return; }
     sec.hidden = false;
@@ -171,9 +173,39 @@
       var vn = $('vlogNote'); if (vn) vn.textContent = CFG.vlogNote || '';
       var ve = $('vlogEl');
       if (ve) {
-        ve.src = CFG.vlog.src;
         if (CFG.vlog.poster) ve.poster = CFG.vlog.poster;
         ve.setAttribute('aria-label', CFG.vlogTitle || '影像集');
+        pickVersion(ve, versions, 0);
+
+        var pick = $('vlogPick');
+        if (pick) {
+          pick.innerHTML = '';
+          if (versions.length > 1) {
+            versions.forEach(function (v, vi) {
+              var btn = el('button');
+              btn.type = 'button';
+              btn.setAttribute('aria-pressed', vi === 0 ? 'true' : 'false');
+              btn.appendChild(el('b', null, v.label || ('版本 ' + (vi + 1))));
+              if (v.note) btn.appendChild(el('span', null, v.note));
+              btn.addEventListener('click', function () {
+                var t = ve.currentTime;
+                var playing = !ve.paused;
+                pickVersion(ve, versions, vi);
+                var all = pick.querySelectorAll('button');
+                for (var k = 0; k < all.length; k++) {
+                  all[k].setAttribute('aria-pressed', k === vi ? 'true' : 'false');
+                }
+                ve.addEventListener('loadedmetadata', function once() {
+                  ve.removeEventListener('loadedmetadata', once);
+                  try { ve.currentTime = t; } catch (e) {}
+                  if (playing) { ve.play().catch(function () {}); }
+                });
+              });
+              pick.appendChild(btn);
+            });
+          }
+        }
+
         // Chrome 会推迟加载离屏的 video，这里主动催一下，保证滚到时不会白屏
         if ('IntersectionObserver' in window) {
           var vio = new IntersectionObserver(function (ens) {
@@ -228,6 +260,14 @@
 
   function photoColCount() {
     return window.innerWidth < 620 ? 1 : 2;
+  }
+
+  /* 切换配乐版本：换源并重新加载 */
+  function pickVersion(video, versions, i) {
+    var v = versions[i];
+    if (!v || !video) return;
+    video.src = v.src;
+    try { video.load(); } catch (e) {}
   }
 
   function makePhotoFigure(p, idx) {
